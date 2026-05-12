@@ -1,0 +1,16 @@
+{
+  "name": "SMC Assistant Engineer Prep",
+  "short_name": "SMC Prep",
+  "description": "Offline‑first exam preparation hub for SMC Assistant Engineer (Electrical)",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
