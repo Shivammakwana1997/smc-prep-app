@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BrainCircuit, Clock, Layers, Zap, Target, BookOpen, AlertTriangle, CheckCircle2, XCircle, RotateCcw, Award } from 'lucide-react';
 
 // Sample MCQs for revision (subset of original bank)
 const revisionQuestions = [
@@ -132,6 +134,16 @@ function isDue(dateStr) {
   return new Date(dateStr) <= new Date();
 }
 
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 // ---------- Main Component ----------
 export default function RevisionEngine() {
   const [queue, setQueue] = useState(() => initQueue());
@@ -260,130 +272,192 @@ export default function RevisionEngine() {
     const card = sessionCards[cardIndex];
     if (!card) return null;
     return (
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-2xl font-semibold text-accent">Revision</h2>
-          <div className="flex items-center gap-2 text-muted text-sm">
-            <span>Card {cardIndex + 1} / {sessionCards.length}</span>
-            <span>⏱ {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}</span>
+      <div className="max-w-3xl mx-auto flex flex-col h-[80vh]">
+        <div className="flex items-center justify-between mb-6 shrink-0">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+               <BrainCircuit size={20} />
+             </div>
+             <h2 className="text-xl font-bold text-text">Spaced Repetition</h2>
+          </div>
+          <div className="flex items-center gap-4 bg-white/50 backdrop-blur px-4 py-2 rounded-xl border border-white shadow-sm">
+            <span className="font-bold text-muted text-sm">Card {cardIndex + 1} of {sessionCards.length}</span>
+            <div className="w-px h-4 bg-darker"></div>
+            <span className="font-mono font-bold text-primary flex items-center gap-1.5 text-lg">
+               <Clock size={16}/> {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+            </span>
           </div>
         </div>
-        <div className="bg-card rounded p-6 mb-4 min-h-[300px] flex flex-col justify-center border border-gray-200 shadow-sm">
-          <span className="text-muted text-xs mb-2">{card.topic} | {card.diff}</span>
-          <h3 className="text-xl font-medium text-accent mb-4">{card.q}</h3>
-          {!flipped ? (
-            <div className="space-y-2">
-              {card.options.map((opt, i) => (
-                <button key={i} onClick={() => setFlipped(true)} className="block w-full text-left p-3 rounded bg-darker text-text hover:bg-secondary/20 transition">
-                  {i + 1}. {opt}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div>
-              <p className="text-success font-medium mb-2">Answer: {card.options[card.ans]}</p>
-              <p className="text-muted text-sm mb-4">{card.explain}</p>
-              <div className="flex gap-2">
-                <button onClick={() => handleResponse(true)} className="px-4 py-2 bg-success text-dark rounded hover:opacity-80">Know it ✓</button>
-                <button onClick={() => handleResponse(false)} className="px-4 py-2 bg-accent2 text-dark rounded hover:opacity-80">Forgot ✗</button>
-                <button onClick={skipCard} className="px-4 py-2 bg-darker text-muted rounded">Skip →</button>
+
+        <div className="flex-1 perspective-1000 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={card.id + (flipped ? '-back' : '-front')}
+              initial={{ rotateY: flipped ? -90 : 90, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              exit={{ rotateY: flipped ? 90 : -90, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="dash-card w-full p-8 md:p-12 shadow-2xl flex flex-col justify-center min-h-[400px] relative border-white"
+            >
+              <div className="absolute top-4 right-4 px-3 py-1 bg-secondary rounded-full border border-darker text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                 <BookOpen size={12}/> {card.topic}
               </div>
-            </div>
-          )}
+              <div className="absolute top-4 left-4 px-3 py-1 bg-amber-100 text-amber-700 rounded-full border border-amber-200 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                 <AlertTriangle size={12}/> {card.diff}
+              </div>
+
+              {!flipped ? (
+                <div className="text-center">
+                  <h3 className="text-2xl md:text-3xl font-semibold text-text leading-relaxed mb-8">{card.q}</h3>
+                  <button onClick={() => setFlipped(true)} className="btn-primary py-3 px-8 text-lg mx-auto inline-flex items-center gap-2">
+                     <RotateCcw size={20}/> Reveal Answer
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <h3 className="text-xl text-text opacity-50 mb-6 line-clamp-2">{card.q}</h3>
+                  <div className="bg-green-50/50 border border-green-200 p-6 rounded-2xl mb-6 shadow-inner">
+                    <p className="text-2xl font-bold text-green-700 mb-2">Answer:</p>
+                    <p className="text-xl font-medium text-green-900">{card.options[card.ans]}</p>
+                  </div>
+                  <div className="bg-secondary/50 p-4 rounded-xl border border-darker mb-8">
+                     <p className="text-sm font-bold text-muted uppercase tracking-wider mb-1">Explanation</p>
+                     <p className="text-text">{card.explain}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    <button onClick={() => handleResponse(true)} className="btn-primary bg-gradient-to-r from-green-500 to-green-600 shadow-green-500/20 py-3 px-6 flex items-center gap-2 border-none">
+                      <CheckCircle2 size={18}/> Remembered
+                    </button>
+                    <button onClick={() => handleResponse(false)} className="btn-primary bg-gradient-to-r from-red-500 to-red-600 shadow-red-500/20 py-3 px-6 flex items-center gap-2 border-none">
+                      <XCircle size={18}/> Forgot
+                    </button>
+                    <button onClick={skipCard} className="btn-secondary py-3 px-6 text-muted">Skip Card</button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-        {!flipped && (
-          <div className="flex justify-center">
-            <button onClick={() => setFlipped(true)} className="px-4 py-2 bg-secondary text-dark rounded">Show Answer</button>
-          </div>
-        )}
-      </section>
+      </div>
     );
   }
 
   if (mode === 'results') {
     return (
-      <section>
-        <h2 className="text-2xl font-semibold text-accent mb-3">Session Complete 🎉</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div className="bg-card p-3 rounded text-center border border-gray-200 shadow-sm">
-            <p className="text-muted text-xs">Correct</p>
-            <p className="text-2xl font-bold text-success">{results.correct}</p>
+      <motion.section initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-6 text-center pt-10">
+        <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white mx-auto shadow-neon mb-6">
+           <Award size={48} />
+        </div>
+        <h2 className="text-3xl font-bold text-text mb-2">Session Complete! 🎉</h2>
+        <p className="text-muted mb-8">You've successfully reviewed {sessionCards.length} cards.</p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="dash-card p-5">
+            <p className="text-muted text-xs font-bold uppercase tracking-wider mb-1">Remembered</p>
+            <p className="text-3xl font-bold text-success">{results.correct}</p>
           </div>
-          <div className="bg-card p-3 rounded text-center border border-gray-200 shadow-sm">
-            <p className="text-muted text-xs">Wrong</p>
-            <p className="text-2xl font-bold text-accent2">{results.wrong}</p>
+          <div className="dash-card p-5">
+            <p className="text-muted text-xs font-bold uppercase tracking-wider mb-1">Forgot</p>
+            <p className="text-3xl font-bold text-danger">{results.wrong}</p>
           </div>
-          <div className="bg-card p-3 rounded text-center border border-gray-200 shadow-sm">
-            <p className="text-muted text-xs">Skipped</p>
-            <p className="text-2xl font-bold text-muted">{results.skipped}</p>
+          <div className="dash-card p-5">
+            <p className="text-muted text-xs font-bold uppercase tracking-wider mb-1">Skipped</p>
+            <p className="text-3xl font-bold text-muted">{results.skipped}</p>
           </div>
         </div>
-        <button onClick={() => setMode('menu')} className="px-4 py-2 bg-secondary text-dark rounded">Back to Menu</button>
-      </section>
+        <button onClick={() => setMode('menu')} className="btn-primary px-8 py-3 text-lg">Return to Engine</button>
+      </motion.section>
     );
   }
 
   // Menu view
   return (
-    <section>
-      <h2 className="text-2xl font-semibold mb-3 text-accent">Revision Engine</h2>
+    <motion.section variants={container} initial="hidden" animate="show" className="max-w-5xl mx-auto space-y-6">
+      <motion.div variants={item} className="flex items-center gap-3 pb-4 border-b border-darker">
+        <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+          <BrainCircuit size={24} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-text">Revision Engine</h2>
+          <p className="text-muted text-sm mt-1">Smart spaced-repetition flashcards to optimize your memory.</p>
+        </div>
+      </motion.div>
       
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Total Cards</p>
-          <p className="text-2xl font-bold text-accent">{totalCount}</p>
+      <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="dash-card p-5">
+          <div className="flex items-center gap-3 mb-2 text-indigo-500">
+             <Layers size={18}/> <p className="text-xs font-bold uppercase tracking-wider">Total Cards</p>
+          </div>
+          <p className="text-3xl font-bold text-text">{totalCount}</p>
         </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Due Today</p>
-          <p className="text-2xl font-bold text-accent2">{dueCount}</p>
+        <div className="dash-card p-5">
+          <div className="flex items-center gap-3 mb-2 text-amber-500">
+             <Clock size={18}/> <p className="text-xs font-bold uppercase tracking-wider">Due Today</p>
+          </div>
+          <p className="text-3xl font-bold text-text">{dueCount}</p>
         </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Weak</p>
-          <p className="text-2xl font-bold text-accent2">{weakCount}</p>
+        <div className="dash-card p-5">
+          <div className="flex items-center gap-3 mb-2 text-rose-500">
+             <AlertTriangle size={18}/> <p className="text-xs font-bold uppercase tracking-wider">Weak Areas</p>
+          </div>
+          <p className="text-3xl font-bold text-text">{weakCount}</p>
         </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Mastered</p>
-          <p className="text-2xl font-bold text-success">{strongCount}</p>
+        <div className="dash-card p-5">
+          <div className="flex items-center gap-3 mb-2 text-green-500">
+             <CheckCircle2 size={18}/> <p className="text-xs font-bold uppercase tracking-wider">Mastered</p>
+          </div>
+          <p className="text-3xl font-bold text-text">{strongCount}</p>
         </div>
-      </div>
-
-      {/* Modes */}
-      <h3 className="text-lg font-medium text-accent mb-3">Choose a Revision Mode</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <button onClick={() => startSession('5min')} className="bg-card p-4 rounded text-left hover:border-secondary border border-gray-200 shadow-sm transition">
-          <h4 className="text-accent font-medium">5-Minute Revision</h4>
-          <p className="text-muted text-sm">Quick burst of 5 cards due today.</p>
-        </button>
-        <button onClick={() => startSession('30min')} className="bg-card p-4 rounded text-left hover:border-secondary border border-gray-200 shadow-sm transition">
-          <h4 className="text-accent font-medium">30-Minute Revision</h4>
-          <p className="text-muted text-sm">Deep review with 10 cards.</p>
-        </button>
-        <button onClick={() => startSession('rapid')} className="bg-card p-4 rounded text-left hover:border-secondary border border-gray-200 shadow-sm transition">
-          <h4 className="text-accent font-medium">Rapid Revision</h4>
-          <p className="text-muted text-sm">Blitz through 15 random cards.</p>
-        </button>
-        <button onClick={() => startSession('before-mock')} className="bg-card p-4 rounded text-left hover:border-secondary border border-gray-200 shadow-sm transition">
-          <h4 className="text-accent font-medium">Before-Mock Review</h4>
-          <p className="text-muted text-sm">Focus on weak topics only.</p>
-        </button>
-        <button onClick={() => startSession('last-day')} className="bg-card p-4 rounded text-left hover:border-secondary border border-gray-200 shadow-sm transition">
-          <h4 className="text-accent font-medium">Last-Day Revision</h4>
-          <p className="text-muted text-sm">High-priority cards, max 20.</p>
-        </button>
-      </div>
+      </motion.div>
 
       {/* Progress Bar */}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium text-accent mb-2">Mastery Progress</h3>
-        <div className="w-full bg-darker rounded h-4 overflow-hidden">
-          <div 
-            className="bg-success h-full transition-all duration-500"
-            style={{ width: totalCount > 0 ? `${(strongCount / totalCount) * 100}%` : '0%' }}
+      <motion.div variants={item} className="dash-card p-5">
+        <div className="flex justify-between items-end mb-2">
+           <h3 className="text-sm font-bold text-text flex items-center gap-2"><Target size={16} className="text-primary"/> Mastery Progress</h3>
+           <span className="text-sm font-bold text-success">{totalCount > 0 ? Math.round((strongCount / totalCount) * 100) : 0}% Mastered</span>
+        </div>
+        <div className="w-full bg-secondary rounded-full h-3 overflow-hidden shadow-inner border border-darker">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: totalCount > 0 ? `${(strongCount / totalCount) * 100}%` : '0%' }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="bg-gradient-to-r from-green-400 to-green-500 h-full"
           />
         </div>
-        <p className="text-muted text-sm mt-1">{totalCount > 0 ? Math.round((strongCount / totalCount) * 100) : 0}% mastered</p>
-      </div>
-    </section>
+      </motion.div>
+
+      {/* Modes */}
+      <motion.div variants={item}>
+        <h3 className="text-lg font-semibold text-text mb-4">Choose a Session Type</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <button onClick={() => startSession('5min')} className="dash-card p-5 text-left hover:border-primary/50 group transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Zap size={60}/></div>
+            <h4 className="text-lg font-bold text-text mb-1 flex items-center gap-2"><Clock size={16} className="text-primary"/> 5-Min Sprint</h4>
+            <p className="text-muted text-sm relative z-10">Quick burst of 5 cards due today.</p>
+          </button>
+          <button onClick={() => startSession('30min')} className="dash-card p-5 text-left hover:border-primary/50 group transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><BrainCircuit size={60}/></div>
+            <h4 className="text-lg font-bold text-text mb-1 flex items-center gap-2"><Clock size={16} className="text-indigo-500"/> Deep Dive</h4>
+            <p className="text-muted text-sm relative z-10">Intense 30-minute review with 10 cards.</p>
+          </button>
+          <button onClick={() => startSession('rapid')} className="dash-card p-5 text-left hover:border-primary/50 group transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Zap size={60}/></div>
+            <h4 className="text-lg font-bold text-text mb-1 flex items-center gap-2"><Zap size={16} className="text-amber-500"/> Rapid Fire</h4>
+            <p className="text-muted text-sm relative z-10">Blitz through 15 random cards.</p>
+          </button>
+          <button onClick={() => startSession('before-mock')} className="dash-card p-5 text-left hover:border-primary/50 group transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><AlertTriangle size={60}/></div>
+            <h4 className="text-lg font-bold text-text mb-1 flex items-center gap-2"><Target size={16} className="text-rose-500"/> Weakness Target</h4>
+            <p className="text-muted text-sm relative z-10">Focus exclusively on your weak topics.</p>
+          </button>
+          <button onClick={() => startSession('last-day')} className="dash-card p-5 text-left hover:border-primary/50 group transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><CheckCircle2 size={60}/></div>
+            <h4 className="text-lg font-bold text-text mb-1 flex items-center gap-2"><Layers size={16} className="text-success"/> Exam Prep</h4>
+            <p className="text-muted text-sm relative z-10">High-priority cards, up to 20.</p>
+          </button>
+        </div>
+      </motion.div>
+    </motion.section>
   );
 }

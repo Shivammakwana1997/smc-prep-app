@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 import VideoWorkspace from './VideoWorkspace';
 import Analytics from './Analytics';
@@ -16,6 +17,11 @@ import AIWeaknessTracker from './AIWeaknessTracker';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+import { 
+  LayoutDashboard, BookOpen, FileText, Video, PenTool, 
+  BrainCircuit, Activity, Calendar, Target, Heart, Search, Menu, X, Lightbulb
+} from 'lucide-react';
 
 // PDF list (copied to public/pdfs)
 const pdfs = [
@@ -44,24 +50,45 @@ const elec4uTopics = [
 export default function App() {
   const [section, setSection] = useState('dashboard');
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'handouts', label: 'Handouts' },
-    { id: 'electrical4u', label: 'Electrical4U' },
-    { id: 'pdfviewer', label: 'PDF Viewer' },
-    { id: 'video', label: 'Videos' },
-    { id: 'mocktest', label: 'Mock Test' },
-    { id: 'examhall', label: 'Exam Hall' },
-    { id: 'subjective', label: 'Subjective' },
-    { id: 'formula', label: 'Formulas' },
-    { id: 'revision', label: 'Revision' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'planner', label: 'Planner' },
-    { id: 'strategy', label: 'Strategy' },
-    { id: 'mindset', label: 'Mindset' },
-    { id: 'notes', label: 'Notes' },
-    { id: 'aiweakness', label: 'AI Tracker' }
+  const navGroups = [
+    {
+      title: 'Main',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'analytics', label: 'Analytics', icon: Activity },
+        { id: 'aiweakness', label: 'AI Tracker', icon: BrainCircuit },
+      ]
+    },
+    {
+      title: 'Study Material',
+      items: [
+        { id: 'handouts', label: 'Handouts', icon: BookOpen },
+        { id: 'electrical4u', label: 'Electrical4U', icon: Search },
+        { id: 'pdfviewer', label: 'PDF Viewer', icon: FileText },
+        { id: 'video', label: 'Videos', icon: Video },
+        { id: 'notes', label: 'Notes', icon: PenTool },
+      ]
+    },
+    {
+      title: 'Practice & Testing',
+      items: [
+        { id: 'formula', label: 'Formulas', icon: Lightbulb },
+        { id: 'mocktest', label: 'Mock Test', icon: Target },
+        { id: 'subjective', label: 'Subjective', icon: PenTool },
+        { id: 'examhall', label: 'Exam Hall', icon: Target },
+        { id: 'revision', label: 'Revision', icon: Activity },
+      ]
+    },
+    {
+      title: 'Planning & Mindset',
+      items: [
+        { id: 'planner', label: 'Planner', icon: Calendar },
+        { id: 'strategy', label: 'Strategy', icon: Target },
+        { id: 'mindset', label: 'Mindset', icon: Heart },
+      ]
+    }
   ];
 
   const handleSelectPdf = (pdf) => {
@@ -92,58 +119,101 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-darker text-text font-sans">
-      {/* Top Header */}
-      <header className="bg-card shadow-page sticky top-0 z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+    <div className="flex h-screen text-text font-sans overflow-hidden bg-transparent">
+      
+      {/* Animated Mesh Background */}
+      <div className="mesh-bg">
+        <div className="mesh-blob bg-blue-300 w-96 h-96 top-0 left-0"></div>
+        <div className="mesh-blob bg-purple-300 w-96 h-96 top-1/2 left-1/4" style={{ animationDelay: '2s' }}></div>
+        <div className="mesh-blob bg-pink-300 w-96 h-96 bottom-0 right-0" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`glass-sidebar w-64 flex-shrink-0 flex flex-col transition-transform duration-300 z-30 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full absolute h-full'}`}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">
               S
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-text leading-tight">SMC Prep App</h1>
-              <p className="text-xs text-muted">Assistant Engineer (Electrical)</p>
+            <span className="font-bold text-text truncate">SMC Prep</span>
+          </div>
+          <button className="md:hidden text-muted hover:text-text" onClick={() => setIsSidebarOpen(false)}>
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+          {navGroups.map((group, idx) => (
+            <div key={idx}>
+              <h3 className="px-3 text-xs font-semibold text-muted uppercase tracking-wider mb-2">{group.title}</h3>
+              <div className="space-y-1">
+                {group.items.map(it => {
+                  const Icon = it.icon;
+                  return (
+                    <button
+                      key={it.id}
+                      onClick={() => { setSection(it.id); if(window.innerWidth < 768) setIsSidebarOpen(false); }}
+                      className={section === it.id ? 'sidebar-link-active' : 'sidebar-link'}
+                    >
+                      <Icon size={18} />
+                      {it.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-xs text-muted">
-            <span className="px-2 py-1 bg-green-50 text-green-700 rounded border border-green-200">Gujarat Govt Exam</span>
-            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-200">PDF & Mockup Mode</span>
+          ))}
+        </div>
+        <div className="p-4 border-t border-white/50">
+          <div className="bg-blue-50/50 backdrop-blur text-blue-700 text-xs p-3 rounded-xl border border-blue-200/50 flex items-start gap-2 shadow-sm">
+            <Target size={16} className="mt-0.5 flex-shrink-0" />
+            <span>Target: Assistant Engineer (Electrical)</span>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Navigation */}
-      <nav className="bg-card border-b border-gray-200 sticky top-[61px] z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center">
-            {navItems.map(it => (
-              <button
-                key={it.id}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                  section === it.id 
-                    ? 'nav-pill-active' 
-                    : 'nav-pill'
-                }`}
-                onClick={() => setSection(it.id)}
+      {/* Main Content Area */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${!isSidebarOpen ? 'md:ml-0' : ''}`}>
+        
+        {/* Topbar */}
+        <header className="h-16 glass-topbar flex items-center justify-between px-4 sm:px-6 lg:px-8 z-20">
+          <div className="flex items-center gap-4">
+            <button 
+              className="text-muted hover:text-text p-2 bg-white/50 rounded-lg backdrop-blur shadow-sm border border-white/50 hover:bg-white transition-all"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <Menu size={20} />
+            </button>
+            <h2 className="text-lg font-semibold text-text capitalize">
+              {section === 'dashboard' ? 'Dashboard Overview' : navGroups.flatMap(g => g.items).find(i => i.id === section)?.label || section}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-3">
+             <span className="hidden sm:inline-flex px-3 py-1 bg-green-50/80 backdrop-blur text-green-700 rounded-full text-xs font-medium border border-green-200/50 shadow-sm">
+               Gujarat Govt Exam
+             </span>
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 z-10 relative">
+          <div className="max-w-7xl mx-auto h-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={section}
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                {it.label}
-              </button>
-            ))}
+                {renderSection()}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
-      </nav>
+        </main>
 
-      {/* Main Content - Document/Page Style */}
-      <main className="max-w-6xl mx-auto p-4 md:p-6">
-        <div className="pdf-page-lg p-6 md:p-8 min-h-[70vh]">
-          {renderSection()}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-4 pb-6 text-center text-xs text-muted">
-        <p>SMC Assistant Engineer (Electrical) Preparation App — Built for focused study</p>
-      </footer>
+      </div>
     </div>
   );
 }
@@ -151,28 +221,30 @@ export default function App() {
 // ---------- Handouts ----------
 function Handouts({ onSelect }) {
   return (
-    <section>
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">📚</div>
+    <section className="space-y-6">
+      <div className="flex items-center gap-3 pb-3 border-b border-darker">
+        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+          <BookOpen size={20} />
+        </div>
         <div>
-          <h2 className="text-2xl font-bold text-text">Handouts</h2>
+          <h2 className="text-xl font-bold text-text">Handouts</h2>
           <p className="text-sm text-muted">Click any card to open the PDF in the built-in viewer.</p>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {pdfs.map(p => (
           <button
             key={p.name}
             onClick={() => onSelect(p)}
-            className="pdf-page p-4 text-left hover:shadow-page-lg transition-all duration-200 group border border-gray-200 bg-white"
+            className="dash-card p-5 text-left group hover:border-primary/50"
           >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-12 bg-red-50 border border-red-100 rounded flex items-center justify-center text-red-500 font-bold text-xs shrink-0 group-hover:bg-red-100 transition">
-                PDF
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-14 bg-red-50 border border-red-100 rounded-lg flex items-center justify-center text-red-500 shrink-0 group-hover:bg-red-100 transition-colors">
+                <FileText size={24} />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-text font-semibold text-sm leading-snug group-hover:text-primary transition">{p.title}</h3>
-                <p className="text-muted text-xs mt-1 truncate">{p.name}</p>
+              <div className="min-w-0 pt-1">
+                <h3 className="text-text font-semibold text-[15px] leading-snug group-hover:text-primary transition-colors">{p.title}</h3>
+                <p className="text-muted text-xs mt-1.5 truncate">{p.name}</p>
               </div>
             </div>
           </button>
@@ -187,58 +259,60 @@ function Electrical4U() {
   const [previewError, setPreviewError] = useState(false);
 
   return (
-    <section>
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">⚡</div>
+    <section className="space-y-6">
+      <div className="flex items-center gap-3 pb-3 border-b border-darker">
+        <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
+          <Search size={20} />
+        </div>
         <div>
-          <h2 className="text-2xl font-bold text-text">Electrical4U Hub</h2>
+          <h2 className="text-xl font-bold text-text">Electrical4U Hub</h2>
           <p className="text-sm text-muted">Curated Electrical4U topics for exam preparation.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {elec4uTopics.map(t => (
           <a
             key={t.url}
             href={t.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="pdf-page p-4 hover:shadow-page-lg transition-all duration-200 group border border-gray-200 bg-white block"
+            className="dash-card p-5 group hover:border-primary/50 block"
           >
-            <h3 className="text-primary font-semibold text-sm mb-1 group-hover:underline">{t.label}</h3>
-            <p className="text-muted text-xs">{t.desc}</p>
+            <h3 className="text-primary font-semibold text-[15px] mb-1.5 group-hover:underline">{t.label}</h3>
+            <p className="text-muted text-sm">{t.desc}</p>
           </a>
         ))}
       </div>
 
-      <div className="pdf-page p-4 border border-gray-200 bg-white">
-        <div className="flex items-center justify-between mb-3">
+      <div className="dash-card">
+        <div className="dash-card-header">
           <h3 className="text-lg font-semibold text-text">Live Preview</h3>
           <a
             href="https://www.electrical4u.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 bg-primary text-white rounded-md text-sm hover:bg-blue-700 transition shadow-sm"
+            className="btn-primary text-sm py-1.5"
           >
             Open in new tab
           </a>
         </div>
-        {previewError ? (
-          <div className="bg-gray-50 rounded-lg p-6 text-center text-muted border border-dashed border-gray-300">
-            <p>Preview blocked by the website.</p>
-            <p className="text-sm mt-1">Use the “Open in new tab” button above.</p>
-          </div>
-        ) : (
-          <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+        <div className="p-0 border-t border-darker">
+          {previewError ? (
+            <div className="bg-secondary p-8 text-center text-muted">
+              <p>Preview blocked by the website.</p>
+              <p className="text-sm mt-1">Use the “Open in new tab” button above.</p>
+            </div>
+          ) : (
             <iframe
               src="https://www.electrical4u.com"
               onError={() => setPreviewError(true)}
-              className="w-full h-96 border-0"
+              className="w-full h-[500px] border-0 bg-white"
               loading="lazy"
               title="Electrical4U Preview"
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
@@ -285,8 +359,10 @@ function PdfViewer({ pdf }) {
 
   if (!pdf) {
     return (
-      <section className="text-center py-12">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">📄</div>
+      <section className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+        <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4">
+          <FileText size={32} />
+        </div>
         <h2 className="text-2xl font-bold text-text mb-2">PDF Viewer</h2>
         <p className="text-muted">No PDF selected. Go to Handouts and pick one.</p>
       </section>
@@ -294,26 +370,30 @@ function PdfViewer({ pdf }) {
   }
 
   return (
-    <section>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600">📄</div>
-          <div>
-            <h2 className="text-xl font-bold text-text">{pdf.title}</h2>
-            <p className="text-xs text-muted">{numPages > 0 && `Page ${pageNum} of ${numPages}`}</p>
+    <section className="space-y-4">
+      <div className="dash-card">
+        <div className="dash-card-header flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
+              <FileText size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-text truncate max-w-sm md:max-w-md">{pdf.title}</h2>
+              <p className="text-xs text-muted">{numPages > 0 && `Page ${pageNum} of ${numPages}`}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPageNum(p => Math.max(1, p - 1))} disabled={pageNum <= 1} className="btn-secondary text-sm py-1.5 px-3">Prev</button>
+            <button onClick={() => setPageNum(p => Math.min(numPages, p + 1))} disabled={pageNum >= numPages} className="btn-secondary text-sm py-1.5 px-3">Next</button>
+            <div className="h-6 w-px bg-darker mx-1" />
+            <button onClick={() => setScale(s => Math.max(0.5, s - 0.2))} className="btn-secondary text-sm py-1.5 px-3">−</button>
+            <button onClick={() => setScale(s => Math.min(3, s + 0.2))} className="btn-secondary text-sm py-1.5 px-3">+</button>
+            <span className="text-muted text-sm font-medium px-2 min-w-[3rem] text-center">{Math.round(scale * 100)}%</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setPageNum(p => Math.max(1, p - 1))} disabled={pageNum <= 1} className="px-3 py-1.5 bg-gray-100 text-text rounded-md text-sm hover:bg-gray-200 disabled:opacity-40 border border-gray-200">← Prev</button>
-          <button onClick={() => setPageNum(p => Math.min(numPages, p + 1))} disabled={pageNum >= numPages} className="px-3 py-1.5 bg-gray-100 text-text rounded-md text-sm hover:bg-gray-200 disabled:opacity-40 border border-gray-200">Next →</button>
-          <div className="h-6 w-px bg-gray-300 mx-1" />
-          <button onClick={() => setScale(s => Math.max(0.5, s - 0.2))} className="px-3 py-1.5 bg-gray-100 text-text rounded-md text-sm hover:bg-gray-200 border border-gray-200">−</button>
-          <button onClick={() => setScale(s => Math.min(3, s + 0.2))} className="px-3 py-1.5 bg-gray-100 text-text rounded-md text-sm hover:bg-gray-200 border border-gray-200">+</button>
-          <span className="text-muted text-xs px-2">{Math.round(scale * 100)}%</span>
+        <div className="bg-secondary/50 border-t border-darker p-4 md:p-6 flex justify-center min-h-[60vh] overflow-auto">
+          <canvas ref={canvasRef} className="shadow-lg bg-white rounded" />
         </div>
-      </div>
-      <div className="overflow-auto bg-gray-100 rounded-xl border border-gray-200 p-4 flex justify-center" style={{ minHeight: '60vh' }}>
-        <canvas ref={canvasRef} className="shadow-2xl bg-white" />
       </div>
     </section>
   );
@@ -356,42 +436,65 @@ function Notes() {
 
   if (editingId !== null) {
     return (
-      <section>
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">📝</div>
-          <h2 className="text-2xl font-bold text-text">{editingId === 'new' ? 'New Note' : 'Edit Note'}</h2>
+      <section className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center gap-3 pb-3 border-b border-darker">
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+            <PenTool size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-text">{editingId === 'new' ? 'New Note' : 'Edit Note'}</h2>
         </div>
-        <input className="w-full mb-3 p-3 rounded-lg bg-gray-50 text-text border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
-        <input className="w-full mb-3 p-3 rounded-lg bg-gray-50 text-text border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)} />
-        <textarea className="w-full h-48 mb-3 p-3 rounded-lg bg-gray-50 text-text border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition resize-y" placeholder="Write your note here..." value={content} onChange={e => setContent(e.target.value)} />
-        <div className="flex gap-2">
-          <button onClick={save} className="px-5 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition shadow-sm font-medium">Save</button>
-          <button onClick={cancel} className="px-5 py-2 bg-gray-100 text-text rounded-lg hover:bg-gray-200 transition border border-gray-200 font-medium">Cancel</button>
-          {editingId !== 'new' && <button onClick={() => del(editingId)} className="px-5 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition border border-red-200 font-medium">Delete</button>}
+        <div className="dash-card">
+          <div className="dash-card-body space-y-4">
+            <input className="input-field" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
+            <input className="input-field" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)} />
+            <textarea className="input-field min-h-[200px] resize-y" placeholder="Write your note here..." value={content} onChange={e => setContent(e.target.value)} />
+          </div>
+          <div className="dash-card-header bg-secondary/30">
+             <div className="flex gap-3">
+              <button onClick={save} className="btn-primary">Save Note</button>
+              <button onClick={cancel} className="btn-secondary">Cancel</button>
+            </div>
+            {editingId !== 'new' && <button onClick={() => del(editingId)} className="btn-danger">Delete</button>}
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section>
-      <div className="flex flex-wrap items-center justify-between mb-4 pb-3 border-b border-gray-200 gap-2">
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between pb-3 border-b border-darker gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">📝</div>
-          <h2 className="text-2xl font-bold text-text">Notes</h2>
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+            <PenTool size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-text">Notes Workspace</h2>
         </div>
-        <button onClick={startNew} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition shadow-sm font-medium text-sm">+ New Note</button>
+        <button onClick={startNew} className="btn-primary text-sm flex items-center gap-2">
+           <PenTool size={16} /> New Note
+        </button>
       </div>
-      <input className="w-full mb-4 p-3 rounded-lg bg-gray-50 text-text border border-gray-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition" placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} />
-      {filtered.length === 0 && <p className="text-muted text-center py-8">No notes found.</p>}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
+        <input className="input-field pl-10" placeholder="Search notes..." value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-12 bg-card rounded-xl border border-dashed border-darker">
+          <PenTool className="mx-auto text-muted mb-3" size={32} />
+          <p className="text-muted">No notes found.</p>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map(n => (
-          <div key={n.id} onClick={() => edit(n.id)}             className="pdf-page p-4 cursor-pointer hover:shadow-page-lg transition-all duration-200 border border-gray-200 bg-white group">
-            <h3 className="text-text font-semibold text-sm truncate group-hover:text-primary transition">{n.title || 'Untitled'}</h3>
-            <p className="text-muted text-sm mt-1 line-clamp-2">{n.content}</p>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-muted text-xs">{n.date}</span>
-              {n.tags && <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">{n.tags}</span>}
+          <div key={n.id} onClick={() => edit(n.id)} className="dash-card p-5 cursor-pointer group hover:border-primary/50 flex flex-col">
+            <h3 className="text-text font-semibold text-[15px] truncate group-hover:text-primary transition-colors">{n.title || 'Untitled'}</h3>
+            <p className="text-muted text-sm mt-2 line-clamp-3 flex-1">{n.content}</p>
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-darker">
+              <span className="text-muted text-xs font-medium">{n.date}</span>
+              {n.tags && <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">{n.tags}</span>}
             </div>
           </div>
         ))}

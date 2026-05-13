@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Target, Activity, Clock, Trophy, TrendingUp, AlertTriangle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 
 // ---------- Colors ----------
-const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
-// ---------- Mock Data Generators (simulating stored data) ----------
+// ---------- Mock Data Generators ----------
 function generateMockData() {
-  // Subject mastery (percentage per topic)
   const subjects = [
     { name: 'Basic Electrical', score: 85 },
     { name: 'Machines', score: 72 },
@@ -21,7 +22,6 @@ function generateMockData() {
     { name: 'Energy & Laws', score: 70 }
   ];
 
-  // Weekly study hours (last 7 days)
   const studyHours = [
     { day: 'Mon', hours: 3, revision: 1 },
     { day: 'Tue', hours: 5, revision: 2 },
@@ -32,7 +32,6 @@ function generateMockData() {
     { day: 'Sun', hours: 3, revision: 1 }
   ];
 
-  // Mock test scores over attempts
   const mockScores = [
     { attempt: '1st', score: 45, total: 60 },
     { attempt: '2nd', score: 52, total: 60 },
@@ -42,7 +41,6 @@ function generateMockData() {
     { attempt: '6th', score: 54, total: 60 }
   ];
 
-  // Weak vs Strong areas (for pie chart)
   const weakVsStrong = [
     { name: 'Strong (>80%)', value: subjects.filter(s => s.score > 80).length },
     { name: 'Moderate (60-80%)', value: subjects.filter(s => s.score >= 60 && s.score <= 80).length },
@@ -56,24 +54,33 @@ function generateMockData() {
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-card border border-gray-700 rounded p-2 shadow-lg">
-      <p className="text-accent font-medium">{label}</p>
+    <div className="bg-white/90 backdrop-blur border border-white/50 rounded-xl p-3 shadow-glass z-50">
+      <p className="text-text font-bold mb-1">{label}</p>
       {payload.map((entry, i) => (
-        <p key={i} className="text-muted text-sm">{entry.name}: {entry.value}</p>
+        <p key={i} className="text-sm font-medium" style={{ color: entry.color || entry.fill }}>
+          {entry.name}: {entry.value}
+        </p>
       ))}
     </div>
   );
 }
 
-// ---------- Analytics Component ----------
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export default function Analytics() {
   const [data] = useState(() => {
     const mockData = generateMockData();
-    // Try to load any stored mock test results
     try {
       const stored = JSON.parse(localStorage.getItem('smc-mock-results'));
       if (stored && stored.length > 0) {
-        // Merge real data with mock data
         return {
           ...mockData,
           mockScores: stored.map((r, i) => ({
@@ -87,92 +94,116 @@ export default function Analytics() {
     return mockData;
   });
 
-  if (!data) return <div className="text-muted">Loading analytics...</div>;
+  if (!data) return <div className="text-muted text-center py-10">Loading analytics...</div>;
 
   const { subjects, studyHours, mockScores, weakVsStrong } = data;
 
-  // Calculate stats
   const avgScore = subjects.reduce((a, b) => a + b.score, 0) / subjects.length;
   const totalStudyHours = studyHours.reduce((a, b) => a + b.hours, 0);
   const strongestSubject = [...subjects].sort((a, b) => b.score - a.score)[0];
   const weakestSubject = [...subjects].sort((a, b) => a.score - b.score)[0];
 
+  const stats = [
+    { label: 'Avg Score', value: `${avgScore.toFixed(0)}%`, icon: Target, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: 'Study (7d)', value: `${totalStudyHours}h`, icon: Clock, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Strongest', value: strongestSubject.name, icon: Trophy, color: 'text-success', bg: 'bg-green-50' },
+    { label: 'Needs Work', value: weakestSubject.name, icon: AlertTriangle, color: 'text-accent', bg: 'bg-amber-50' },
+  ];
+
   return (
-    <section>
-      <h2 className="text-2xl font-semibold mb-3 text-accent">Performance Analytics</h2>
-      
+    <motion.section variants={container} initial="hidden" animate="show" className="space-y-6">
+      <motion.div variants={item} className="flex items-center gap-3 pb-4 border-b border-darker">
+        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+          <Activity size={24} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-text">Performance Analytics</h2>
+          <p className="text-muted text-sm mt-1">Track your progress and identify areas for improvement.</p>
+        </div>
+      </motion.div>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Avg Score</p>
-          <p className="text-2xl font-bold text-accent">{avgScore.toFixed(0)}%</p>
-        </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Study Hours (7d)</p>
-          <p className="text-2xl font-bold text-accent">{totalStudyHours}h</p>
-        </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Strongest</p>
-          <p className="text-lg font-bold text-success truncate">{strongestSubject.name}</p>
-        </div>
-        <div className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-          <p className="text-muted text-xs">Needs Work</p>
-          <p className="text-lg font-bold text-accent2 truncate">{weakestSubject.name}</p>
-        </div>
-      </div>
+      <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s, idx) => {
+          const Icon = s.icon;
+          return (
+            <motion.div key={idx} whileHover={{ y: -5, scale: 1.02 }} className="dash-card p-5 flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.bg} ${s.color}`}>
+                <Icon size={24} />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-muted text-xs font-medium uppercase tracking-wider">{s.label}</p>
+                <p className={`text-xl font-bold truncate ${s.color}`}>{s.value}</p>
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Subject Mastery */}
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-3">Subject Mastery</h3>
+        <motion.div variants={item} className="dash-card p-5">
+          <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
+            <Trophy size={18} className="text-primary"/> Subject Mastery
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={subjects} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis type="number" domain={[0, 100]} stroke="#94a3b8" />
-              <YAxis dataKey="name" type="category" width={120} stroke="#94a3b8" tick={{ fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="score" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} stroke="#64748b" fontSize={12} />
+              <YAxis dataKey="name" type="category" width={110} stroke="#64748b" fontSize={11} />
+              <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(59, 130, 246, 0.05)'}} />
+              <Bar dataKey="score" fill="url(#colorScore)" radius={[0, 4, 4, 0]}>
+                {subjects.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.score > 80 ? '#10b981' : entry.score > 60 ? '#3b82f6' : '#f59e0b'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
         {/* Mock Test Progress */}
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-3">Mock Test Progress</h3>
+        <motion.div variants={item} className="dash-card p-5">
+          <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
+            <TrendingUp size={18} className="text-indigo-500"/> Mock Test Progress
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockScores}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="attempt" stroke="#94a3b8" />
-              <YAxis domain={[0, 60]} stroke="#94a3b8" />
+            <LineChart data={mockScores} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="attempt" stroke="#64748b" fontSize={12} />
+              <YAxis domain={[0, 'dataMax + 10']} stroke="#64748b" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="score" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#f59e0b', r: 5 }} />
+              <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4, stroke: '#fff' }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Study Hours */}
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-3">Study Hours (Last 7 Days)</h3>
+        <motion.div variants={item} className="dash-card p-5">
+          <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
+            <Clock size={18} className="text-amber-500"/> Study Hours (Last 7 Days)
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={studyHours}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="day" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar dataKey="hours" fill="#3b82f6" name="Study" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="revision" fill="#10b981" name="Revision" radius={[4, 4, 0, 0]} />
+            <BarChart data={studyHours} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
+              <YAxis stroke="#64748b" fontSize={12} />
+              <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(59, 130, 246, 0.05)'}} />
+              <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+              <Bar dataKey="hours" fill="#3b82f6" name="New Topics" radius={[4, 4, 0, 0]} stackId="a" />
+              <Bar dataKey="revision" fill="#10b981" name="Revision" radius={[4, 4, 0, 0]} stackId="a" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
         {/* Weak vs Strong Areas */}
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-3">Subject Distribution</h3>
+        <motion.div variants={item} className="dash-card p-5">
+          <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
+            <Target size={18} className="text-success"/> Subject Distribution
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -180,10 +211,12 @@ export default function Analytics() {
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
-                outerRadius={100}
+                outerRadius={90}
                 paddingAngle={5}
                 dataKey="value"
-                label={({ name, value }) => `${name}: ${value}`}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                labelLine={false}
+                stroke="none"
               >
                 {weakVsStrong.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -192,22 +225,24 @@ export default function Analytics() {
               <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
       </div>
 
       {/* Radar Chart for overall skills */}
-      <div className="bg-card p-4 rounded mb-6 border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-accent mb-3">Skill Radar</h3>
+      <motion.div variants={item} className="dash-card p-5 mb-6">
+        <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
+           <Activity size={18} className="text-rose-500"/> Skill Radar
+        </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <RadarChart data={subjects}>
-            <PolarGrid stroke="#334155" />
-            <PolarAngleAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-            <PolarRadiusAxis stroke="#334155" />
-            <Radar name="Mastery" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} strokeWidth={2} />
+          <RadarChart data={subjects} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+            <PolarGrid stroke="#cbd5e1" />
+            <PolarAngleAxis dataKey="name" stroke="#64748b" tick={{ fill: '#475569', fontSize: 11 }} />
+            <PolarRadiusAxis stroke="#cbd5e1" angle={30} domain={[0, 100]} />
+            <Radar name="Mastery" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} strokeWidth={2} />
             <Tooltip content={<CustomTooltip />} />
           </RadarChart>
         </ResponsiveContainer>
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 }

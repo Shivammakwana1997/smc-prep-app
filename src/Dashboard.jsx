@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Target, Activity, BookOpen, Video, PenTool, BarChart3, AlertTriangle, TrendingUp, Clock, Calendar } from 'lucide-react';
 
 function useLocalStorage(key, defaultValue) {
   const [value, setValue] = useState(() => {
@@ -10,6 +12,21 @@ function useLocalStorage(key, defaultValue) {
   }, [key, value]);
   return [value, setValue];
 }
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 export default function Dashboard({ onNavigate }) {
   const [streak] = useState(() => {
@@ -44,98 +61,171 @@ export default function Dashboard({ onNavigate }) {
     : 0;
 
   const stats = [
-    { label: 'Study Streak', value: streak, unit: 'days', color: 'text-accent' },
-    { label: 'Notes', value: notes.length, unit: '', color: 'text-secondary' },
-    { label: 'Revision Due', value: dueToday, unit: 'cards', color: 'text-accent2' },
-    { label: 'Avg Score', value: `${avgScore}%`, unit: '', color: 'text-success' },
+    { label: 'Study Streak', value: streak, unit: 'days', color: 'text-primary', bg: 'bg-primary/10', icon: TrendingUp },
+    { label: 'Notes', value: notes.length, unit: 'saved', color: 'text-indigo-600', bg: 'bg-indigo-50', icon: PenTool },
+    { label: 'Revision Due', value: dueToday, unit: 'cards', color: 'text-accent', bg: 'bg-amber-50', icon: Clock },
+    { label: 'Avg Score', value: `${avgScore}%`, unit: 'accuracy', color: 'text-success', bg: 'bg-green-50', icon: Target },
   ];
 
   const actions = [
-    { id: 'mocktest', label: 'Take Mock Test', icon: '📝' },
-    { id: 'revision', label: 'Start Revision', icon: '🔄' },
-    { id: 'handouts', label: 'Browse PDFs', icon: '📚' },
-    { id: 'video', label: 'Watch Videos', icon: '🎥' },
-    { id: 'notes', label: 'Open Notes', icon: '📝' },
-    { id: 'analytics', label: 'View Analytics', icon: '📊' },
+    { id: 'mocktest', label: 'Take Mock Test', icon: Target, color: 'text-primary' },
+    { id: 'revision', label: 'Start Revision', icon: Activity, color: 'text-indigo-500' },
+    { id: 'handouts', label: 'Browse PDFs', icon: BookOpen, color: 'text-emerald-500' },
+    { id: 'video', label: 'Watch Videos', icon: Video, color: 'text-rose-500' },
+    { id: 'notes', label: 'Open Notes', icon: PenTool, color: 'text-purple-500' },
+    { id: 'analytics', label: 'View Analytics', icon: BarChart3, color: 'text-blue-500' },
   ];
 
   return (
-    <section>
-      <h1 className="text-3xl font-bold mb-2 text-accent">Dashboard</h1>
-      <p className="text-muted mb-4">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    <motion.section 
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <motion.div variants={item} className="flex justify-between items-end pb-4 border-b border-darker/50">
+        <div>
+          <h1 className="text-2xl font-bold text-text mb-1 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Welcome Back! 👋</h1>
+          <div className="flex items-center gap-2 text-muted text-sm">
+            <Calendar size={14} />
+            <span>{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
+        </div>
+        <div className="hidden sm:block">
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('mocktest')} 
+            className="btn-primary flex items-center gap-2"
+          >
+            <Target size={16} /> Start Test
+          </motion.button>
+        </div>
+      </motion.div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {stats.map(s => (
-          <div key={s.label} className="bg-card p-3 rounded border border-gray-200 shadow-sm">
-            <p className="text-muted text-xs">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            {s.unit && <p className="text-muted text-xs">{s.unit}</p>}
-          </div>
-        ))}
-      </div>
+      <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s, idx) => {
+          const Icon = s.icon;
+          return (
+            <motion.div 
+              key={idx} 
+              whileHover={{ y: -5, scale: 1.02 }}
+              className="dash-card p-5 flex items-center gap-4"
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.bg} ${s.color}`}>
+                <Icon size={24} />
+              </div>
+              <div>
+                <p className="text-muted text-xs font-medium uppercase tracking-wider">{s.label}</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className={`text-2xl font-bold ${s.color}`}>{s.value}</span>
+                  {s.unit && <span className="text-muted text-xs font-medium">{s.unit}</span>}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Quick Actions */}
-      <h2 className="text-xl font-semibold text-accent mb-2">Quick Actions</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        {actions.map(a => (
-          <button key={a.id} onClick={() => onNavigate(a.id)} className="bg-card p-3 rounded hover:border-secondary border border-gray-200 shadow-sm transition text-center">
-            <div className="text-2xl mb-1">{a.icon}</div>
-            <p className="text-accent text-sm font-medium">{a.label}</p>
-          </button>
-        ))}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-2">📈 Recent Mock Tests</h3>
-          {mockResults.length === 0 ? (
-            <p className="text-muted text-sm">No mock tests taken yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {mockResults.slice(-3).reverse().map((r, i) => (
-                <div key={i} className="flex justify-between text-muted text-sm py-1 border-b border-gray-700 last:border-0">
-                  <span>{r.date}</span>
-                  <span className="text-accent">{r.score}/{r.total} ({r.accuracy}%)</span>
+      <motion.div variants={item}>
+        <h2 className="text-lg font-semibold text-text mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {actions.map(a => {
+            const Icon = a.icon;
+            return (
+              <motion.button 
+                key={a.id} 
+                whileHover={{ y: -5, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onNavigate(a.id)} 
+                className="dash-card p-4 flex flex-col items-center justify-center gap-3 hover:border-primary/50 group transition-colors"
+              >
+                <div className={`w-10 h-10 rounded-full bg-secondary flex items-center justify-center ${a.color} group-hover:scale-110 transition-transform`}>
+                  <Icon size={20} />
                 </div>
-              ))}
-            </div>
-          )}
+                <span className="text-text text-sm font-medium">{a.label}</span>
+              </motion.button>
+            );
+          })}
         </div>
-        <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-          <h3 className="text-lg font-medium text-accent mb-2">📝 Recent Notes</h3>
-          {notes.length === 0 ? (
-            <p className="text-muted text-sm">No notes yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {notes.slice(-3).reverse().map((n, i) => (
-                <div key={i} className="flex justify-between text-muted text-sm py-1 border-b border-gray-700 last:border-0">
-                  <span className="truncate max-w-[200px]">{n.title || 'Untitled'}</span>
-                  <span>{n.date}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      </motion.div>
 
-      {/* Weak Topics */}
-      <div className="bg-card p-4 rounded border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-accent mb-2">⚠️ Weak Topics</h3>
-        {revisionQueue.length === 0 ? (
-          <p className="text-muted text-sm">Start revision to identify weak topics.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {Array.from(new Set(revisionQueue.filter(q => q.interval <= 1).map(q => q.topic))).slice(0, 4).map(topic => (
-              <div key={topic} className="bg-darker p-2 rounded text-center border border-gray-200">
-                <p className="text-accent text-sm font-medium">{topic}</p>
-                <p className="text-muted text-xs">Needs work</p>
-              </div>
-            ))}
+      {/* Activity & Weaknesses */}
+      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Recent Mock Tests */}
+        <div className="dash-card lg:col-span-2">
+          <div className="dash-card-header">
+            <h3 className="text-base font-semibold text-text flex items-center gap-2">
+              <Activity size={18} className="text-primary" /> Recent Activity
+            </h3>
+            <button onClick={() => onNavigate('analytics')} className="text-primary text-sm font-medium hover:underline">View All</button>
           </div>
-        )}
-      </div>
-    </section>
+          <div className="p-0">
+            {mockResults.length === 0 ? (
+              <div className="p-8 text-center text-muted border-b border-darker">No mock tests taken yet.</div>
+            ) : (
+              <div className="divide-y divide-darker">
+                {mockResults.slice(-4).reverse().map((r, i) => (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    key={i} 
+                    className="flex justify-between items-center p-4 hover:bg-secondary/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Target size={14} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-text">Mock Test</p>
+                        <p className="text-xs text-muted">{r.date}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-text">{r.score}/{r.total}</p>
+                      <p className={`text-xs font-medium ${r.accuracy >= 70 ? 'text-success' : 'text-accent'}`}>{r.accuracy}% Accuracy</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Weak Topics */}
+        <div className="dash-card">
+           <div className="dash-card-header">
+            <h3 className="text-base font-semibold text-text flex items-center gap-2">
+              <AlertTriangle size={18} className="text-accent" /> Focus Areas
+            </h3>
+          </div>
+          <div className="dash-card-body">
+            {revisionQueue.length === 0 ? (
+              <p className="text-muted text-sm text-center py-4">Start revision to identify weak topics.</p>
+            ) : (
+              <div className="space-y-3">
+                {Array.from(new Set(revisionQueue.filter(q => q.interval <= 1).map(q => q.topic))).slice(0, 5).map((topic, i) => (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    key={topic} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-red-50/80 backdrop-blur border border-red-100/50"
+                  >
+                    <span className="text-sm font-medium text-red-700 truncate pr-2">{topic}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-red-200 text-red-800 rounded-full shrink-0">Review</span>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+      </motion.div>
+    </motion.section>
   );
 }
