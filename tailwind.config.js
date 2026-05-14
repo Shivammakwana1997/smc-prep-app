@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,17 +8,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#3b82f6',     // Vibrant Blue
-        primaryHover: '#2563eb', // Darker Blue for hover
-        secondary: '#f8fafc',   // Very light gray/blue background
-        accent: '#f59e0b',      // Warm amber for highlights
-        success: '#10b981',     // Clean green for success
-        danger: '#ef4444',      // Crisp red for errors/deletes
-        dark: '#f1f5f9',        // Background shade
-        darker: '#e2e8f0',      // Borders/Dividers
-        card: 'rgba(255, 255, 255, 0.7)', // Frosted Glass White
-        text: '#0f172a',        // Main text (slate-900)
-        muted: '#64748b',       // Subtext (slate-500)
+        primary: '#3b82f6',     
+        primaryHover: '#2563eb', 
+        secondary: 'var(--color-secondary)',
+        accent: '#f59e0b',      
+        success: '#10b981',     
+        danger: '#ef4444',      
+        dark: 'var(--color-dark)',
+        darker: 'var(--color-darker)',
+        card: 'var(--color-card)',
+        text: 'var(--color-text)',
+        muted: 'var(--color-muted)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],

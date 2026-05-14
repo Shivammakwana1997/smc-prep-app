@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from './AuthContext';
 import './App.css';
 import VideoWorkspace from './VideoWorkspace';
 import Analytics from './Analytics';
@@ -13,6 +14,7 @@ import FinalStrategy from './FinalStrategy';
 import PsychologyWellbeing from './PsychologyWellbeing';
 import Dashboard from './Dashboard';
 import AIWeaknessTracker from './AIWeaknessTracker';
+import SyllabusTracker from './SyllabusTracker';
 
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -20,7 +22,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 import { 
   LayoutDashboard, BookOpen, FileText, Video, PenTool, 
-  BrainCircuit, Activity, Calendar, Target, Heart, Search, Menu, X, Lightbulb
+  BrainCircuit, Activity, Calendar, Target, Heart, Search, Menu, X, Lightbulb, Moon, Sun, Clock
 } from 'lucide-react';
 
 // PDF list (copied to public/pdfs)
@@ -48,15 +50,40 @@ const elec4uTopics = [
 ];
 
 export default function App() {
+  const { user, login, logout } = useAuth();
   const [section, setSection] = useState('dashboard');
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [time, setTime] = useState(new Date());
+  
+  // Theme state
+  const [isDark, setIsDark] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('smc-theme-dark')) || false; }
+    catch { return false; }
+  });
+
+  // Clock ticker
+  useEffect(() => {
+    const timerId = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
+  // Theme applier
+  useEffect(() => {
+    localStorage.setItem('smc-theme-dark', JSON.stringify(isDark));
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   const navGroups = [
     {
       title: 'Main',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'syllabus', label: 'Syllabus Map', icon: BookOpen },
         { id: 'analytics', label: 'Analytics', icon: Activity },
         { id: 'aiweakness', label: 'AI Tracker', icon: BrainCircuit },
       ]
@@ -99,6 +126,7 @@ export default function App() {
   const renderSection = () => {
     switch (section) {
       case 'dashboard': return <Dashboard onNavigate={setSection} />;
+      case 'syllabus': return <SyllabusTracker />;
       case 'handouts': return <Handouts onSelect={handleSelectPdf} />;
       case 'electrical4u': return <Electrical4U />;
       case 'pdfviewer': return <PdfViewer pdf={selectedPdf} />;
@@ -164,8 +192,8 @@ export default function App() {
             </div>
           ))}
         </div>
-        <div className="p-4 border-t border-white/50">
-          <div className="bg-blue-50/50 backdrop-blur text-blue-700 text-xs p-3 rounded-xl border border-blue-200/50 flex items-start gap-2 shadow-sm">
+        <div className="p-4 border-t border-white/50 dark:border-[#222222]">
+          <div className="bg-blue-50/50 dark:bg-blue-900/20 backdrop-blur text-blue-700 dark:text-blue-300 text-xs p-3 rounded-xl border border-blue-200/50 dark:border-blue-800/30 flex items-start gap-2 shadow-sm">
             <Target size={16} className="mt-0.5 flex-shrink-0" />
             <span>Target: Assistant Engineer (Electrical)</span>
           </div>
@@ -179,20 +207,36 @@ export default function App() {
         <header className="h-16 glass-topbar flex items-center justify-between px-4 sm:px-6 lg:px-8 z-20">
           <div className="flex items-center gap-4">
             <button 
-              className="text-muted hover:text-text p-2 bg-white/50 rounded-lg backdrop-blur shadow-sm border border-white/50 hover:bg-white transition-all"
+              className="text-muted hover:text-text dark:text-gray-300 p-2 bg-white/50 dark:bg-black/40 rounded-lg backdrop-blur shadow-sm border border-white/50 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-all"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
               <Menu size={20} />
             </button>
-            <h2 className="text-lg font-semibold text-text capitalize">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white capitalize truncate">
               {section === 'dashboard' ? 'Dashboard Overview' : navGroups.flatMap(g => g.items).find(i => i.id === section)?.label || section}
             </h2>
           </div>
           
-          <div className="flex items-center gap-3">
-             <span className="hidden sm:inline-flex px-3 py-1 bg-green-50/80 backdrop-blur text-green-700 rounded-full text-xs font-medium border border-green-200/50 shadow-sm">
-               Gujarat Govt Exam
-             </span>
+          <div className="flex items-center gap-4">
+             {/* Clock & Date Widget */}
+             <div className="hidden lg:flex items-center gap-3">
+               <div className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                 <Clock size={14} className="text-blue-500" />
+                 <span className="font-mono font-bold text-gray-900 dark:text-white text-sm">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+               </div>
+               <div className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                 <Calendar size={14} className="text-purple-500" />
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">{time.toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+               </div>
+             </div>
+
+             <button
+               onClick={() => setIsDark(!isDark)}
+               className="p-2 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+               title="Toggle Theme"
+             >
+               {isDark ? <Sun size={18} /> : <Moon size={18} />}
+             </button>
           </div>
         </header>
 
